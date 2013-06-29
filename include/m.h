@@ -2,7 +2,6 @@
 #define M_H_
 
 #include "mconfig.h"
-#include "mt.h"
 
 
 #endif /* M_H_ */

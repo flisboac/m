@@ -7,3 +7,4 @@
 {"ts":1372366077522,"patch":[[{"diffs":[[0,"e M_H_\n\n"],[1,"#include \"mconfi\""],[0,"\n\n\n#endi"]],"start1":19,"start2":19,"length1":16,"length2":33}]],"length":65,"saved":false}
 {"ts":1372366079825,"patch":[[{"diffs":[[0," \"mconfi"],[1,"g.h"],[0,"\"\n\n\n#end"]],"start1":35,"start2":35,"length1":16,"length2":19}]],"length":68,"saved":false}
 {"contributors":[],"silentsave":true,"ts":1372369144150,"patch":[[{"diffs":[[0,"nfig.h\"\n"],[1,"#include \"mt.h\"\n"],[0,"\n\n#endif"]],"start1":40,"start2":40,"length1":16,"length2":32}]],"length":84,"saved":false}
+{"contributors":[],"silentsave":true,"ts":1372453632259,"patch":[[{"diffs":[[0,".h\"\n"],[-1,"#include \"mt.h\"\n"],[0,"\n\n#e"]],"start1":44,"start2":44,"length1":24,"length2":8}]],"length":68,"saved":false}

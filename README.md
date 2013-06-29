@@ -49,6 +49,7 @@ Type Suffixes:
     All suffixes starts with '_'.
     For realized names, they must start with '__'.
     - (No suffix): Generally, the same as 't'.
+    - 'a': The type's API.
     - 't': The type. Must be properly typedef'd.
     - 'p': Pointer for the type. Must be properly typedef'd.
     - 'i': Iterator type to the type. Must be properly typedef'd.
@@ -72,7 +73,7 @@ Special Suffixes:
     - 'DECL': Same as DECT followed by DECS.
     - 'DEFN': Defines functions and initialize variables.
         Implies that DECL was previously done.
-    - 'DINIT': All at once (DECL and DEFN).
+    - 'IMPL': All at once (DECL and DEFN).
 
 
 */
