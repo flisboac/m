@@ -17,6 +17,7 @@
 
 /*==============================================================================
  * [[[   D E F I N I T I O N S   ]]]
+ *==============================================================================
  * Do not change what is below this line, unless you know what you're doing.
  */
 
@@ -152,62 +153,172 @@
 
 /*==============================================================================
  * [[[   B A S E    ]]]
+ *==============================================================================
  * Basic definitions and macros.
  */
 
+#define m_NOSZ        ((size_t)(-1))
+#define m_MAXSZ       (m_NOSZ - 1)
 
-typedef enum m_EErr m_EErr;
+#define m(S)          m ## __ ## A
+#define m_t(S)        m(S) ## __type
+#define m_p(S)        m(S) ## __ptr
+#define m_f(S, n)     m(S) ## __ ## n
+#define m_fp(S, n)    m_f(S, n) ## __fnproto
+
+#define m_at(S)       m(S) ## __apitype
+#define m_a(S)        m(S) ## __api
+#define M(S)          m_a(S)
+
+#define m_ki(S, i)    m(S) ## __keytype ## i
+#define m_vi(S, i)    m(S) ## __valtype ## i
+#define m_k(S)        m_ki(S, 0)
+#define m_v(S)        m_vi(S, 0)
+#define m_i(S)        m(S) ## __iter
+#define m_ip(S)       m(S) ## __iterptr
+
+#define m_DECLFP(S, n, r, a) \
+                      typedef r (* m_fp(S, n)) (a)
+
+#define m_DECLBASEFN(S)                                                \
+    m_DECLFP( S, extend, m_at(S)*,      (m_at(S)*)                  ); \
+    m_DECLFP( S, alloc,  m(S)*,         (m(S)*, int, size_t)        ); \
+    m_DECLFP( S, voper,  m_EErr,        (int, size_t, m(S)*, m(S)*) ); \
+    m_DECLFP( S, hash,   size_t,        (m(S))                      ); \
+    m_DECLFP( S, cmp,    int,           (m(S), m(S))                ); \
+    m_USERAPI m_at(S)*   m_f(S, extend) (m_at(S)*                   ); \
+    m_USERAPI m(S)*      m_f(S, alloc ) (m(S)*, int, size_t         ); \
+    m_USERAPI m_EErr     m_f(S, voper ) (int, size_t, m(S)*, m(S)*) ); \
+    m_USERAPI size_t     m_f(S, hash  ) (m(S)                       ); \
+    m_USERAPI int        m_f(S, cmp   ) (m(S), m(S)                 )
+
+#define m_DECLVBASED(S)             \
+    typedef struct m_t(S)  m_t(S);  \
+    typedef m_t(S)*        m_p(S);  \
+    typedef m_t(S)         m(S);    \
+    typedef struct m_a(S)  m_a(S)
+
+#define m_DECLPBASED(S)             \
+    typedef struct m_t(S)  m_t(S);  \
+    typedef m_t(S)*        m_p(S);  \
+    typedef m_p(S)         m(S);    \
+    typedef struct m_a(S)  m_a(S)
+
+#define m_DECLAPI(S, n, r, a)  \
+    m_USERAPI r m_f(S, n) a;   \
+    m_DECLFP(S, n, r, a)
+
+#define m_DECLIAPI(S, n, r, a) \
+    m_USERIAPI r m_f(S, n) a;   \
+    m_DECLFP(S, n, r, a)
+
+#define m_Api_FIELDS(S)         \
+    union {                     \
+        const m_Api*   api;     \
+        const m_at(S)* baseapi; \
+    };                          \
+    const char*        apiname; \
+    size_t             objsize; \
+    m_f(S, alloc)      alloc;   \
+    m_f(S, voper)      voper;   \
+    m_f(S, hash )      hash;    \
+    m_f(S, cmp  )      cmp
+
+#define m_Obj_FIELDS(S)   \
+    union {               \
+        m_Api*  api;      \
+        m_a(S)* objapi;   \
+    }
+
+
+/*------------------------------------------------------------------------------
+ * [[[ TYPE DEFINITIONS ]]]
+ */
+
+typedef enum m_EErr      m_EErr;
+typedef enum m_EIterMode m_EIterMode;
+typedef enum m_EValOper  m_EValOper;
+
 typedef struct m_Api m_Api;
 typedef struct m_Obj m_Obj;
 
 struct m_Api {
-    const m_Api* baseapi;
+    union {
+        const m_Api* api;
+        const m_Api* baseapi;
+    };
     const char*  apiname;
     size_t       objsize;
 };
 
 struct m_Obj {
-    m_Api* objapi;
+    union {
+        m_Api* api;
+        m_Api* objapi;
+    };
 };
 
-#define m(S, A)    S ## __ ## A
-#define m_t(S, A)  m(S, A)
-#define m_type     m_t
-#define m_p(S, A)  m(S, A) ## __ptr
-#define m_ptr      m_p
-#define m_a(S, A)  m(S, A) ## __api
-#define m_api      m_a
-#define m_f(S,A,n) m(S, A) ## _ ## n
-#define m_function m_f
-#define m_fp(S, A) m(S, A) ## __fnproto
-#define m_fnproto  m_fn
+/**
+ * Represents a condition or exit code.
+ *
+ * Values greater than @c m_OK are considered to be error
+ * conditions, while values less than @c m_OK are considered to be warning
+ * or informational conditions.
+ */
+enum m_EErr {
 
-#define m_ki(S,A,i) m(S, A) ## __key ## i
-#define m_keytypei  m_ki
-#define m_vi(S,A,i) m(S, A) ## __val ## i
-#define m_valtypei  m_vi
-#define m_k(S, A)   m_ki(S, A, 0)
-#define m_keytype   m_k
-#define m_v(S, A)   m_vi(S, A, 0)
-#define m_valtype   m_v
-#define m_i(S, A)   m(S, A) ## __iter
-#define m_iter      m_i
-#define m_ip(S, A)  m(S, A) ## __iterptr
-#define m_iterptr   m_ip
+      m_ERRSIZE = -1 /**< The element reached its capacity limit. */
+    , m_OK      = 0  /**< Operation successful. */
+    , m_ERROR   = 1  /**< An error ocurred. */
+    , m_ERRNULL = 2  /**< Null pointer passed (somewhere). */
+    , m_ERRIMPL = 3  /**< Not implemented. */
+    , m_ERRSUPP = 4  /**< Not supported. */
+    , m_ERRMEM  = 5  /**< Out of memory. */
+    , m_ERRVAL  = 6  /**< Error while calling a value callback. */
+    , m_ERRMISS = 7  /**< Invalid or missing arguments or operands. */
+    , m_ERRCAP  = 8  /**< Insufficient capacty. */
 
-#define m_DECT(S, A) m(S, A) ## _DECT
-#define m_DECS(S, A) m(S, A) ## _DECS
-#define m_DECL(S, A) m_DECT(S, A); m_DECS
-#define m_DEFN(S, A) m(S, A) ## _DEFN
-#define m_IMPL(S, A) DECL(S, A); m_DEFN
+    /* ... */
 
-#define m_FP(S, A, n, r, a) typedef r (* m_fp(S, A, N)) a
-#define m_FNPROTO           m_FP
+    , m_EErr_MAX = m_ERRCAP
+    , m_EErr_MIN = m_ERRSIZE
+};
 
-#define m_DECLTYPES(S, A) \
-    typedef struct m_t(S, A)  m(S, A); \
-    typedef m_p(S, A)*        m_p(S, A); \
-    typedef struct m_a(S, A)  m_a(S, A)
+
+/**
+ * Represents an iterator's mode of container traversal.
+ */
+enum m_EIterMode {
+
+      m_ITER_NONE = 0    /**< Invalid iterator or iteration mode. */
+    , m_ITER_ORDER       /**< Alias for an iteration in normal order (generally left-right). The specific mode is implementation-defined. */
+    , m_ITER_RORDER      /**< Alias for an iteration in reverse order. The specific mode is implementation-defined. */
+    , m_ITER_LEVEL_PRE   /**< Makes a pre-order, breadth-first iteration. */
+    , m_ITER_LEVEL_POST  /**< Makes a post-order, breadth-first iteration. */
+    , m_ITER_RLEVEL_PRE  /**< Makes a pre-order, breadth-first iteration, in reverse order. */
+    , m_ITER_RLEVEL_POST /**< Makes a post-order, breadth-first iteration, in reverse order. */
+    , m_ITER_DEPTH_LTR   /**< Makes a left-to-right, depth-first iteration. */
+    , m_ITER_DEPTH_RTL   /**< Makes a right-to-left, depth-first iteration. */
+    , m_ITER_RDEPTH_LTR  /**< Makes a left-to-right, depth-first iteration, in reverse order. */
+    , m_ITER_RDEPTH_RTL  /**< Makes a right-to-left, depth-first iteration, in reverse order. */
+
+    /* ... */
+
+    , m_EIterMode_MAX = m_ITER_RDEPTH_RTL
+    , m_EIterMode_MIN = m_ITER_ORDER
+};
+
+
+enum m_EValOper {
+
+      m_VAL_NONE = 0
+    , m_VAL_INIT
+    , m_VAL_QUIT
+    , m_VAL_COPY
+
+    , m_EValOper_MIN = m_VAL_INIT
+    , m_EValOper_MAX = m_VAL_COPY
+};
 
 
 #endif /* MCONFIG_H_ */
